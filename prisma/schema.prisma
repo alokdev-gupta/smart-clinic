@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(PATIENT)
+  createdAt DateTime @default(now())
+  doctor    Doctor?
+  patient   Patient?
+}
+
+model Patient {
+  id               String          @id @default(cuid())
+  userId           String          @unique
+  dateOfBirth      DateTime?
+  gender           String?
+  bloodGroup       String?
+  phone            String?
+  address          String?
+  emergencyContact String?
+  medicalHistory   String?
+  appointments     Appointment[]
+  beds             Bed[]
+  invoices         Invoice[]
+  medicalRecords   MedicalRecord[]
+  user             User            @relation(fields: [userId], references: [id])
+}
+
+model Doctor {
+  id              String          @id @default(cuid())
+  userId          String          @unique
+  specialization  String
+  licenseNumber   String          @unique
+  experience      Int
+  consultationFee Float
+  schedule        Json?
+  appointments    Appointment[]
+  user            User            @relation(fields: [userId], references: [id])
+  medicalRecords  MedicalRecord[]
+}
+
+model Appointment {
+  id            String            @id @default(cuid())
+  patientId     String
+  doctorId      String
+  date          DateTime
+  time          String
+  status        AppointmentStatus @default(PENDING)
+  reason        String?
+  notes         String?
+  createdAt     DateTime          @default(now())
+  doctor        Doctor            @relation(fields: [doctorId], references: [id])
+  patient       Patient           @relation(fields: [patientId], references: [id])
+  invoice       Invoice?
+  medicalRecord MedicalRecord?
+}
+
+model MedicalRecord {
+  id            String         @id @default(cuid())
+  patientId     String
+  doctorId      String
+  appointmentId String         @unique
+  diagnosis     String
+  prescription  String?
+  labResults    String?
+  followUpDate  DateTime?
+  createdAt     DateTime       @default(now())
+  appointment   Appointment    @relation(fields: [appointmentId], references: [id])
+  doctor        Doctor         @relation(fields: [doctorId], references: [id])
+  patient       Patient        @relation(fields: [patientId], references: [id])
+  prescriptions Prescription[]
+}
+
+model Prescription {
+  id              String        @id @default(cuid())
+  medicalRecordId String
+  medicineName    String
+  dosage          String
+  duration        String
+  instructions    String?
+  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id])
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  appointmentId String        @unique
+  patientId     String
+  amount        Float
+  tax           Float         @default(0)
+  total         Float
+  status        InvoiceStatus @default(PENDING)
+  paymentMethod String?
+  issuedAt      DateTime      @default(now())
+  appointment   Appointment   @relation(fields: [appointmentId], references: [id])
+  patient       Patient       @relation(fields: [patientId], references: [id])
+}
+
+model Inventory {
+  id           String    @id @default(cuid())
+  itemName     String
+  category     String
+  quantity     Int
+  unit         String
+  reorderLevel Int
+  expiryDate   DateTime?
+  supplier     String?
+  costPerUnit  Float
+  updatedAt    DateTime  @updatedAt
+}
+
+model Ward {
+  id            String @id @default(cuid())
+  name          String
+  floor         Int
+  totalBeds     Int
+  availableBeds Int
+  type          String
+  beds          Bed[]
+}
+
+model Bed {
+  id         String   @id @default(cuid())
+  wardId     String
+  bedNumber  String
+  isOccupied Boolean  @default(false)
+  patientId  String?
+  patient    Patient? @relation(fields: [patientId], references: [id])
+  ward       Ward     @relation(fields: [wardId], references: [id])
+}
+
+model ClinicSettings {
+  id        String   @id @default("default")
+  name      String
+  address   String
+  phone     String
+  email     String
+  website   String
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  DOCTOR
+  RECEPTIONIST
+  PATIENT
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum InvoiceStatus {
+  PAID
+  PENDING
+  CANCELLED
+}
