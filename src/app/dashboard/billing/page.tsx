@@ -19,6 +19,7 @@ interface Invoice {
   paymentMethod?: string | null;
   issuedAt: string;
   patient: { user: { name: string } };
+  appointment?: { id: string };
 }
 
 interface Patient {
