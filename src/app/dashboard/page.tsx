@@ -5,6 +5,7 @@ import AppointmentChart from "@/components/dashboard/AppointmentChart";
 import RevenueChart from "@/components/dashboard/RevenueChart";
 import RecentAppointments from "@/components/dashboard/RecentAppointments";
 import { auth } from "@/lib/auth";
+import { getDashboardStats } from "@/lib/data/dashboard";
 
 interface DashboardStats {
   totalPatients: number;
@@ -30,18 +31,6 @@ function getGreeting(): string {
   if (hour < 12) return "Good Morning";
   if (hour < 17) return "Good Afternoon";
   return "Good Evening";
-}
-
-async function fetchStats(baseUrl: string): Promise<DashboardStats | null> {
-  try {
-    const res = await fetch(`${baseUrl}/api/dashboard/stats`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
 }
 
 const quickActions = [
@@ -90,12 +79,12 @@ export default async function DashboardPage() {
   const greeting = getGreeting();
   const userName = session?.user?.name ?? "User";
 
-  // Fetch stats server-side
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXTAUTH_URL || "http://localhost:3000";
-
-  const stats = (await fetchStats(baseUrl)) ?? emptyStats;
+  let stats: DashboardStats = emptyStats;
+  try {
+    stats = await getDashboardStats();
+  } catch (error) {
+    console.error("Failed to load dashboard stats:", error);
+  }
 
   return (
     <div className="space-y-6 max-w-[1600px]">
