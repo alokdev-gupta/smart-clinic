@@ -12,11 +12,11 @@ export async function GET() {
       settings = await prisma.clinicSettings.create({
         data: {
           id: "default",
-          name: "ClinicOS",
-          address: "Biratnagar-1, Koshi Province, Nepal",
+          name: "Madan Bhandari Clinic",
+          address: "Biratnagar, Nepal",
           phone: "021-555555",
-          email: "clinic@clinicos.com",
-          website: "www.clinicos.com",
+          email: "info@madanbhandariclinic.com",
+          website: "www.madanbhandariclinic.com",
         },
       });
     }

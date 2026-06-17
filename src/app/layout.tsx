@@ -17,9 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ClinicOS – Smart Clinic Management System",
+  title: "Madan Bhandari Clinic – Smart Clinic Management System",
   description:
-    "ClinicOS is a comprehensive smart clinic management system for Biratnagar, Nepal. Manage patients, appointments, billing, and more.",
+    "Madan Bhandari Clinic is a comprehensive smart clinic management system for Biratnagar, Nepal. Manage patients, appointments, billing, and more.",
   keywords: ["clinic", "hospital", "management", "Nepal", "Biratnagar", "healthcare"],
 };
 

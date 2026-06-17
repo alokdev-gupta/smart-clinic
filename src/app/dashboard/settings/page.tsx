@@ -13,11 +13,11 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
 
   const [clinic, setClinic] = useState({
-    name: "ClinicOS",
-    address: "Biratnagar-1, Koshi Province, Nepal",
+    name: "Madan Bhandari Clinic",
+    address: "Biratnagar, Nepal",
     phone: "021-555555",
-    email: "clinic@clinicos.com",
-    website: "www.clinicos.com",
+    email: "info@madanbhandariclinic.com",
+    website: "www.madanbhandariclinic.com",
   });
 
   const [pwd, setPwd] = useState({ current: "", new: "", confirm: "" });
@@ -229,14 +229,14 @@ export default function SettingsPage() {
                   {clinic.name ? clinic.name.charAt(0).toUpperCase() : 'C'}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-800">{clinic.name || "ClinicOS"}</h2>
+                  <h2 className="text-2xl font-bold text-slate-800">{clinic.name || "Madan Bhandari Clinic"}</h2>
                   <p className="text-slate-500">Version 1.0.0</p>
                 </div>
               </div>
               <div>
                 <h3 className="font-semibold text-slate-800 mb-2">About the System</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {clinic.name || "ClinicOS"} is a comprehensive Smart Clinic Management System designed to streamline healthcare operations. It handles patient records, appointments, doctor schedules, medical records, billing, inventory, and ward management in a single unified interface.
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  {clinic.name || "Madan Bhandari Clinic"} is a comprehensive Smart Clinic Management System designed to streamline healthcare operations. It handles patient records, appointments, doctor schedules, medical records, billing, inventory, and ward management in a single unified interface.
                 </p>
               </div>
               <div>
@@ -247,8 +247,8 @@ export default function SettingsPage() {
                   ))}
                 </div>
               </div>
-              <div className="pt-6 border-t border-slate-100">
-                <p className="text-xs text-slate-400">© 2026 {clinic.name || "ClinicOS"}. All rights reserved.</p>
+              <div className="mt-8 pt-6 border-t border-slate-200">
+                <p className="text-xs text-slate-400">© 2026 {clinic.name || "Madan Bhandari Clinic"}. All rights reserved.</p>
               </div>
             </div>
           </TabsContent>

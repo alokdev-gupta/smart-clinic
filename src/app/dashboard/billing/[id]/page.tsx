@@ -103,10 +103,10 @@ export default function InvoiceDetailPage() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white font-bold text-lg">C</div>
-              <span className="text-2xl font-bold text-slate-800 tracking-tight">{settings?.name || "ClinicOS"}</span>
+              <span className="text-2xl font-bold text-slate-800 tracking-tight">{settings?.name || "Madan Bhandari Clinic"}</span>
             </div>
-            <p className="text-slate-500 text-sm">{settings?.address || "Biratnagar-1, Koshi Province, Nepal"}</p>
-            <p className="text-slate-500 text-sm">Phone: {settings?.phone || "021-555555"} | {settings?.email || "clinic@clinicos.com"}</p>
+            <p className="text-slate-500 text-sm">{settings?.address || "Biratnagar, Nepal"}</p>
+            <p className="text-slate-500 text-sm">Phone: {settings?.phone || "021-555555"} | {settings?.email || "info@madanbhandariclinic.com"}</p>
           </div>
           <div className="mt-6 md:mt-0 md:text-right print:mt-0 print:text-right">
             <h2 className="text-3xl font-bold text-slate-200 uppercase tracking-widest print:text-slate-300">Invoice</h2>
@@ -185,7 +185,7 @@ export default function InvoiceDetailPage() {
 
         {/* Footer */}
         <div className="mt-16 pt-8 border-t border-slate-100 text-center print:mt-12 print:pt-6">
-          <p className="text-sm font-medium text-slate-800">Thank you for choosing ClinicOS.</p>
+          <p className="text-sm font-medium text-slate-800">Thank you for choosing Madan Bhandari Clinic.</p>
           <p className="text-xs text-slate-400 mt-1">Generated electronically on {formatDate(new Date().toISOString())}</p>
         </div>
       </div>

@@ -181,6 +181,13 @@ export default function Sidebar({ userName, userRole, isMobile }: SidebarProps) 
             <span className="truncate">Sign Out</span>
           </button>
         </div>
+
+        {/* Copyright Footer */}
+        <div className="pt-3 pb-1 text-center">
+          <p className="text-[10px] text-slate-500/80">
+            &copy; 2026 Madan Bhandari Clinic. All rights reserved.
+          </p>
+        </div>
       </div>
     </aside>
   );
