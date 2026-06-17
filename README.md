@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏥 ClinicOS — Smart Clinic Management System
+# 🏥 MadanBhandariClinic — Clinic Management System
 
 **A modern, full-stack clinic management platform built for healthcare professionals in Nepal.**
 
@@ -32,7 +32,7 @@
 
 ## 🌟 Overview
 
-**ClinicOS** is a comprehensive clinic management system designed to streamline day-to-day operations of a modern healthcare facility. It provides role-based access for Admins, Doctors, and Receptionists to manage patients, appointments, billing, medical records, inventory, and ward beds — all from a single, intuitive dashboard.
+**MadanBhandariClinic** is a comprehensive clinic management system designed to streamline day-to-day operations of a modern healthcare facility. It provides role-based access for Admins, Doctors, and Receptionists to manage patients, appointments, billing, medical records, inventory, and ward beds — all from a single, intuitive dashboard.
 
 ---
 
@@ -285,10 +285,7 @@ After seeding the database, use these credentials to log in:
 | Role | Email | Password |
 |---|---|---|
 | 👑 **Admin** | `admin@clinic.com` | `Admin@123` |
-| 🩺 **Doctor** | `ramesh@clinic.com` | `Doctor@123` |
-| 🩺 **Doctor** | `sunita@clinic.com` | `Doctor@123` |
-| 🩺 **Doctor** | `bikash@clinic.com` | `Doctor@123` |
-| 🧑‍⚕️ **Patient** | `aarav@patient.com` | `Patient@123` |
+
 
 > ⚠️ **Change these default passwords immediately in a production environment!**
 
@@ -302,6 +299,6 @@ This project is for educational and academic purposes.
 
 <div align="center">
 
-Made with ❤️ in Nepal 🇳🇵
+Made with ❤️ in Nepal 
 
 </div>
