@@ -91,11 +91,9 @@ export default async function DashboardPage() {
   const userName = session?.user?.name ?? "User";
 
   // Fetch stats server-side
-  const baseUrl =
-    process.env.NEXTAUTH_URL ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXTAUTH_URL || "http://localhost:3000";
 
   const stats = (await fetchStats(baseUrl)) ?? emptyStats;
 
