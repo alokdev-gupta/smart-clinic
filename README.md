@@ -285,9 +285,21 @@ After seeding the database, use these credentials to log in:
 | Role | Email | Password |
 |---|---|---|
 | 👑 **Admin** | `admin@clinic.com` | `Admin@123` |
+| 👨‍⚕️ **Doctor** | `ramesh@clinic.com` | `Doctor@123` |
+| 🤒 **Patient** | `aarav@patient.com` | `Patient@123` |
 
 
 > ⚠️ **Change these default passwords immediately in a production environment!**
+
+---
+
+## 🆕 Recent Updates (June 2026)
+
+- **Role-Based Access Control (RBAC):** Added support for multi-role login (Admin, Doctor, Patient) using NextAuth credentials.
+- **Dynamic UI:** Dashboard statistics and UI elements (buttons, forms) dynamically hide/show based on the logged-in user's role.
+- **Sidebar Navigation:** Implemented a globally managed, collapsible desktop sidebar with smooth animations and default closed state on login.
+- **Middleware Update:** Fixed proxy routing logic to properly allow authorized non-admin users to access the dashboard securely.
+- **Provider Fix:** Added `<SessionProvider>` to the root layout to prevent client-side hook crashes (`useSession()`).
 
 ---
 
