@@ -7,6 +7,11 @@ import { formatDate } from "@/lib/utils";
 import MobileNav from "./MobileNav";
 import { useSidebar } from "./SidebarContext";
 
+const handleLogout = async () => {
+  await signOut({ redirect: false });
+  window.location.href = "/login";
+};
+
 interface HeaderProps {
   pageTitle?: string;
   userName?: string | null;
@@ -142,7 +147,7 @@ export default function Header({ pageTitle = "Dashboard", userName, userRole }: 
                 </a>
                 <button
                   id="header-logout-btn"
-                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500
                     hover:bg-red-50 transition-colors"
                 >
