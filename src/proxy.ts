@@ -9,9 +9,10 @@ export async function proxy(req: NextRequest) {
   const isLoggedIn = !!session?.user;
 
   const isDashboardRoute = nextUrl.pathname.startsWith("/dashboard");
+  const allowedRoles = ["ADMIN", "DOCTOR", "PATIENT"];
 
   if (isDashboardRoute) {
-    if (!isLoggedIn || session?.user?.role !== "ADMIN") {
+    if (!isLoggedIn || !allowedRoles.includes(session?.user?.role ?? "")) {
       const loginUrl = new URL("/login", nextUrl.origin);
       loginUrl.searchParams.set("callbackUrl", nextUrl.pathname);
       return NextResponse.redirect(loginUrl);

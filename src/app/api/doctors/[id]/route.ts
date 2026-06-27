@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireAuth, canPerform, forbidden } from "@/lib/rbac";
 
 export async function GET(
   _req: NextRequest,
   ctx: RouteContext<"/api/doctors/[id]">
 ) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
   try {
     const { id } = await ctx.params;
     const doctor = await prisma.doctor.findUnique({
@@ -25,8 +29,8 @@ export async function GET(
       return NextResponse.json({ error: "Doctor not found" }, { status: 404 });
     }
     return NextResponse.json(doctor);
-  } catch (error) {
-    console.error("[doctors/[id] GET]", error);
+  } catch (err) {
+    console.error("[doctors/[id] GET]", err);
     return NextResponse.json({ error: "Failed to fetch doctor" }, { status: 500 });
   }
 }
@@ -35,6 +39,12 @@ export async function PUT(
   req: NextRequest,
   ctx: RouteContext<"/api/doctors/[id]">
 ) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
+  const role = session!.user.role as string;
+  if (!canPerform(role, "write")) return forbidden();
+
   try {
     const { id } = await ctx.params;
     const body = await req.json();
@@ -43,6 +53,13 @@ export async function PUT(
     const doctor = await prisma.doctor.findUnique({ where: { id } });
     if (!doctor) {
       return NextResponse.json({ error: "Doctor not found" }, { status: 404 });
+    }
+
+    // DOCTOR can only update their own profile
+    if (role === "DOCTOR") {
+      if (doctor.userId !== session!.user.id) {
+        return forbidden("You can only update your own profile");
+      }
     }
 
     const updated = await prisma.$transaction(async (tx: any) => {
@@ -61,8 +78,8 @@ export async function PUT(
     });
 
     return NextResponse.json(updated);
-  } catch (error) {
-    console.error("[doctors/[id] PUT]", error);
+  } catch (err) {
+    console.error("[doctors/[id] PUT]", err);
     return NextResponse.json({ error: "Failed to update doctor" }, { status: 500 });
   }
 }
@@ -71,6 +88,14 @@ export async function DELETE(
   _req: NextRequest,
   ctx: RouteContext<"/api/doctors/[id]">
 ) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
+  // Only ADMIN can delete doctors
+  if (!canPerform(session!.user.role as string, "delete")) {
+    return forbidden("Only admins can delete doctors");
+  }
+
   try {
     const { id } = await ctx.params;
     const doctor = await prisma.doctor.findUnique({ where: { id } });
@@ -79,8 +104,8 @@ export async function DELETE(
     }
     await prisma.user.delete({ where: { id: doctor.userId } });
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("[doctors/[id] DELETE]", error);
+  } catch (err) {
+    console.error("[doctors/[id] DELETE]", err);
     return NextResponse.json({ error: "Failed to delete doctor" }, { status: 500 });
   }
 }

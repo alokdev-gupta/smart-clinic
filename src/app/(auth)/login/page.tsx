@@ -45,9 +45,9 @@ export default function LoginPage() {
       if (result?.error) {
         toast.error("Invalid credentials. Please check your email and password.");
       } else if (result?.ok) {
-        toast.success("Welcome back! Redirecting to dashboard...");
-        router.push("/dashboard");
-        router.refresh();
+        toast.success("Login successful! Redirecting...");
+        // Use window.location to force a hard navigation and ensure the session cookie is sent
+        window.location.href = "/dashboard";
       }
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -180,12 +180,21 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Admin Credentials Hint */}
-        <div className="mt-5 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
-          <p className="text-xs text-emerald-700 font-medium text-center mb-1">🔐 Admin Access Only</p>
-          <p className="text-xs text-emerald-600 text-center">
-            Email: <span className="font-mono font-semibold">admin@clinic.com</span>
-          </p>
+        {/* Login Info */}
+        <div className="mt-5 p-3 rounded-xl bg-emerald-50 border border-emerald-100 space-y-1.5">
+          <p className="text-xs text-emerald-700 font-semibold text-center mb-2">🔐 Role-Based Access</p>
+          <div className="flex items-center justify-between text-xs">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold">Admin</span>
+            <span className="text-slate-500">Full access + delete</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">Doctor</span>
+            <span className="text-slate-500">Read + Create + Update</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold">Patient</span>
+            <span className="text-slate-500">View own data + Book</span>
+          </div>
         </div>
 
         {/* Footer */}

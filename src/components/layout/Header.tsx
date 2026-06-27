@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
-import { Bell, ChevronDown, User, LogOut } from "lucide-react";
+import { Bell, ChevronDown, User, LogOut, Menu } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import MobileNav from "./MobileNav";
+import { useSidebar } from "./SidebarContext";
 
 interface HeaderProps {
   pageTitle?: string;
@@ -15,6 +16,7 @@ interface HeaderProps {
 export default function Header({ pageTitle = "Dashboard", userName, userRole }: HeaderProps) {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { toggle } = useSidebar();
 
   useEffect(() => {
     setCurrentTime(new Date());
@@ -42,7 +44,20 @@ export default function Header({ pageTitle = "Dashboard", userName, userRole }: 
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 shadow-sm flex items-center px-4 md:px-6 gap-4 sticky top-0 z-40 print:hidden">
-      <MobileNav userName={userName} userRole={userRole} />
+      {/* Mobile nav (sheet) - only on small screens */}
+      <div className="md:hidden">
+        <MobileNav userName={userName} userRole={userRole} />
+      </div>
+
+      {/* Desktop sidebar toggle button */}
+      <button
+        onClick={toggle}
+        className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+        aria-label="Toggle sidebar"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
       {/* Page Title */}
       <div className="flex-1 truncate">
         <h2 className="text-lg font-semibold text-slate-800 truncate">{pageTitle}</h2>

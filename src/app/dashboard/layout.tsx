@@ -2,18 +2,10 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import { SidebarProvider } from "@/components/layout/SidebarContext";
+import SidebarShift from "@/components/layout/SidebarShift";
 
-const pageTitles: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/dashboard/patients": "Patients",
-  "/dashboard/doctors": "Doctors",
-  "/dashboard/appointments": "Appointments",
-  "/dashboard/medical-records": "Medical Records",
-  "/dashboard/billing": "Billing",
-  "/dashboard/inventory": "Inventory",
-  "/dashboard/wards": "Wards",
-  "/dashboard/settings": "Settings",
-};
+const ALLOWED_ROLES = ["ADMIN", "DOCTOR", "PATIENT"];
 
 export default async function DashboardLayout({
   children,
@@ -22,28 +14,33 @@ export default async function DashboardLayout({
 }) {
   const session = await auth();
 
-  if (!session?.user || session.user.role !== "ADMIN") {
+  if (!session?.user || !ALLOWED_ROLES.includes(session.user.role ?? "")) {
     redirect("/login");
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: "#F8FAFC" }}>
-      {/* Main content area */}
-      <div className="flex flex-col flex-1 ml-0 min-h-screen overflow-hidden">
-        {/* Top Header */}
-        <Header
-          userName={session.user.name}
-          userRole={session.user.role}
-        />
+    <SidebarProvider>
+      <div className="flex h-screen overflow-hidden" style={{ background: "#F8FAFC" }}>
+        {/* Sidebar */}
+        <Sidebar userName={session.user.name} userRole={session.user.role} />
 
-        {/* Scrollable page content */}
-        <main
-          className="flex-1 overflow-y-auto p-6"
-          style={{ background: "#F8FAFC" }}
-        >
-          {children}
-        </main>
+        {/* Main content area — shifts right when sidebar is open */}
+        <SidebarShift>
+          {/* Top Header */}
+          <Header
+            userName={session.user.name}
+            userRole={session.user.role}
+          />
+
+          {/* Scrollable page content */}
+          <main
+            className="flex-1 overflow-y-auto p-6"
+            style={{ background: "#F8FAFC" }}
+          >
+            {children}
+          </main>
+        </SidebarShift>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

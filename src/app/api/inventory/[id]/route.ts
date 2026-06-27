@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole } from "@/lib/rbac";
 
+// Inventory ADMIN-only operations
 export async function PUT(
   req: NextRequest,
   ctx: RouteContext<"/api/inventory/[id]">
 ) {
+  const { error } = await requireRole(["ADMIN"]);
+  if (error) return error;
+
   try {
     const { id } = await ctx.params;
     const body = await req.json();
@@ -25,8 +30,8 @@ export async function PUT(
     });
 
     return NextResponse.json(item);
-  } catch (error) {
-    console.error("[inventory/[id] PUT]", error);
+  } catch (err) {
+    console.error("[inventory/[id] PUT]", err);
     return NextResponse.json({ error: "Failed to update inventory item" }, { status: 500 });
   }
 }
@@ -35,12 +40,15 @@ export async function DELETE(
   _req: NextRequest,
   ctx: RouteContext<"/api/inventory/[id]">
 ) {
+  const { error } = await requireRole(["ADMIN"]);
+  if (error) return error;
+
   try {
     const { id } = await ctx.params;
     await prisma.inventory.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("[inventory/[id] DELETE]", error);
+  } catch (err) {
+    console.error("[inventory/[id] DELETE]", err);
     return NextResponse.json({ error: "Failed to delete inventory item" }, { status: 500 });
   }
 }

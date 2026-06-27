@@ -3,9 +3,11 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { UserPlus, Search, Stethoscope } from "lucide-react";
+import { UserPlus, Search, Stethoscope, Trash2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import EmptyState from "@/components/shared/EmptyState";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { formatCurrency } from "@/lib/utils";
 
 interface Doctor {
@@ -32,9 +34,14 @@ const getSpecColor = (spec: string) =>
   SPEC_COLORS[spec] ?? { bg: "bg-slate-50", text: "text-slate-700", avatar: "#64748B" };
 
 export default function DoctorsPage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
+
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Doctor | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchDoctors = useCallback(async () => {
     try {
@@ -50,6 +57,22 @@ export default function DoctorsPage() {
   }, []);
 
   useEffect(() => { fetchDoctors(); }, [fetchDoctors]);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/doctors/${deleteTarget.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      toast.success(`Dr. ${deleteTarget.user.name} removed successfully`);
+      setDeleteTarget(null);
+      fetchDoctors();
+    } catch {
+      toast.error("Failed to delete doctor");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const filtered = doctors.filter(
     (d) =>
@@ -67,13 +90,16 @@ export default function DoctorsPage() {
           <h1 className="text-2xl font-bold text-slate-800">Doctors</h1>
           <p className="text-slate-500 text-sm mt-0.5">{doctors.length} doctors on staff</p>
         </div>
-        <Link
-          href="/dashboard/doctors/new"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-all"
-          style={{ background: "linear-gradient(135deg, #10B981, #059669)" }}
-        >
-          <UserPlus className="h-4 w-4" /> Add Doctor
-        </Link>
+        {/* Add Doctor button — ADMIN only */}
+        {isAdmin && (
+          <Link
+            href="/dashboard/doctors/new"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-all"
+            style={{ background: "linear-gradient(135deg, #10B981, #059669)" }}
+          >
+            <UserPlus className="h-4 w-4" /> Add Doctor
+          </Link>
+        )}
       </div>
 
       {/* Search */}
@@ -132,18 +158,44 @@ export default function DoctorsPage() {
                   </div>
                 </div>
 
-                {/* Action */}
-                <Link
-                  href={`/dashboard/doctors/${doctor.id}`}
-                  className="mt-4 w-full py-2 rounded-xl text-xs font-semibold text-center transition-all
-                    border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                >
-                  View Profile
-                </Link>
+                {/* Actions */}
+                <div className={`mt-4 flex gap-2 ${isAdmin ? "flex-row" : ""}`}>
+                  <Link
+                    href={`/dashboard/doctors/${doctor.id}`}
+                    className="flex-1 py-2 rounded-xl text-xs font-semibold text-center transition-all
+                      border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    View Profile
+                  </Link>
+                  {/* Delete button — ADMIN only */}
+                  {isAdmin && (
+                    <button
+                      onClick={() => setDeleteTarget(doctor)}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center border border-red-200 text-red-500
+                        hover:bg-red-50 transition-colors shrink-0"
+                      title="Delete Doctor"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* Delete Confirm — ADMIN only */}
+      {isAdmin && (
+        <ConfirmDialog
+          open={!!deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDelete}
+          title="Remove Doctor"
+          description={`Are you sure you want to remove "Dr. ${deleteTarget?.user.name}"? This will also delete their user account and cannot be undone.`}
+          confirmLabel="Remove Doctor"
+          isLoading={deleting}
+        />
       )}
     </div>
   );

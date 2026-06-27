@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, requireAuth } from "@/lib/rbac";
 
 export async function GET() {
+  // All authenticated users can read clinic settings
+  const { error } = await requireAuth();
+  if (error) return error;
+
   try {
     let settings = await prisma.clinicSettings.findUnique({
       where: { id: "default" },
@@ -32,6 +37,10 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  // Only ADMIN can update clinic settings
+  const { error } = await requireRole(["ADMIN"]);
+  if (error) return error;
+
   try {
     const body = await req.json();
     const { name, address, phone, email, website } = body;

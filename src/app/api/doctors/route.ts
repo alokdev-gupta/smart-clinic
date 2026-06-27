@@ -1,21 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { requireAuth, canPerform, forbidden } from "@/lib/rbac";
 
 export async function GET() {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
   try {
     const doctors = await prisma.doctor.findMany({
       include: { user: { select: { id: true, name: true, email: true, role: true, createdAt: true } } },
       orderBy: { user: { name: "asc" } },
     });
     return NextResponse.json(doctors);
-  } catch (error) {
-    console.error("[doctors GET]", error);
+  } catch (err) {
+    console.error("[doctors GET]", err);
     return NextResponse.json({ error: "Failed to fetch doctors" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
+  // Only ADMIN can add new doctors
+  if (session!.user.role !== "ADMIN") {
+    return forbidden("Only admins can add new doctors");
+  }
+
   try {
     const body = await req.json();
     const { name, email, specialization, licenseNumber, experience, consultationFee } = body;
@@ -54,8 +66,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(doctor, { status: 201 });
-  } catch (error) {
-    console.error("[doctors POST]", error);
+  } catch (err) {
+    console.error("[doctors POST]", err);
     return NextResponse.json({ error: "Failed to create doctor" }, { status: 500 });
   }
 }

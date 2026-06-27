@@ -33,13 +33,14 @@ function getGreeting(): string {
   return "Good Evening";
 }
 
-const quickActions = [
+const allQuickActions = [
   {
     label: "New Appointment",
     href: "/dashboard/appointments/new",
     icon: Calendar,
     color: "#10B981",
     bgColor: "rgba(16,185,129,0.08)",
+    roles: ["ADMIN", "DOCTOR", "PATIENT"],
   },
   {
     label: "Register Patient",
@@ -47,6 +48,7 @@ const quickActions = [
     icon: Users,
     color: "#3B82F6",
     bgColor: "rgba(59,130,246,0.08)",
+    roles: ["ADMIN"],
   },
   {
     label: "Create Invoice",
@@ -54,6 +56,7 @@ const quickActions = [
     icon: Receipt,
     color: "#8B5CF6",
     bgColor: "rgba(139,92,246,0.08)",
+    roles: ["ADMIN"],
   },
 ];
 
@@ -78,13 +81,19 @@ export default async function DashboardPage() {
   const session = await auth();
   const greeting = getGreeting();
   const userName = session?.user?.name ?? "User";
+  const role = session?.user?.role ?? "PATIENT";
+  const isAdmin = role === "ADMIN";
 
   let stats: DashboardStats = emptyStats;
   try {
-    stats = await getDashboardStats();
+    if (session?.user?.id) {
+      stats = await getDashboardStats(session.user.id, role);
+    }
   } catch (error) {
     console.error("Failed to load dashboard stats:", error);
   }
+
+  const quickActions = allQuickActions.filter(a => a.roles.includes(role));
 
   return (
     <div className="space-y-6 max-w-[1600px]">
@@ -125,12 +134,12 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats Cards Row */}
-      <StatsCards stats={stats} />
+      <StatsCards stats={stats} role={role} />
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className={`grid grid-cols-1 ${isAdmin ? "lg:grid-cols-2" : ""} gap-6`}>
         <AppointmentChart data={stats.weeklyAppointments} />
-        <RevenueChart data={stats.monthlyRevenueTrend} />
+        {isAdmin && <RevenueChart data={stats.monthlyRevenueTrend} />}
       </div>
 
       {/* Recent Appointments */}

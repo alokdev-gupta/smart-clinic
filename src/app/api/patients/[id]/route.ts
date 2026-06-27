@@ -1,12 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireAuth, canPerform, forbidden } from "@/lib/rbac";
 
 export async function GET(
   _req: NextRequest,
   ctx: RouteContext<"/api/patients/[id]">
 ) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
   try {
     const { id } = await ctx.params;
+    const role = session!.user.role as string;
+
+    // PATIENT can only fetch their own record
+    if (role === "PATIENT") {
+      const ownPatient = await prisma.patient.findFirst({
+        where: { user: { id: session!.user.id } },
+      });
+      if (!ownPatient || ownPatient.id !== id) {
+        return forbidden("You can only view your own patient record");
+      }
+    }
+
     const patient = await prisma.patient.findUnique({
       where: { id },
       include: {
@@ -27,8 +43,8 @@ export async function GET(
       return NextResponse.json({ error: "Patient not found" }, { status: 404 });
     }
     return NextResponse.json(patient);
-  } catch (error) {
-    console.error("[patients/[id] GET]", error);
+  } catch (err) {
+    console.error("[patients/[id] GET]", err);
     return NextResponse.json({ error: "Failed to fetch patient" }, { status: 500 });
   }
 }
@@ -37,6 +53,12 @@ export async function PUT(
   req: NextRequest,
   ctx: RouteContext<"/api/patients/[id]">
 ) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
+  const role = session!.user.role as string;
+  if (!canPerform(role, "write")) return forbidden();
+
   try {
     const { id } = await ctx.params;
     const body = await req.json();
@@ -45,6 +67,16 @@ export async function PUT(
     const patient = await prisma.patient.findUnique({ where: { id } });
     if (!patient) {
       return NextResponse.json({ error: "Patient not found" }, { status: 404 });
+    }
+
+    // PATIENT can only update their own record
+    if (role === "PATIENT") {
+      const ownPatient = await prisma.patient.findFirst({
+        where: { user: { id: session!.user.id } },
+      });
+      if (!ownPatient || ownPatient.id !== id) {
+        return forbidden("You can only update your own profile");
+      }
     }
 
     const updated = await prisma.$transaction(async (tx: any) => {
@@ -64,8 +96,8 @@ export async function PUT(
     });
 
     return NextResponse.json(updated);
-  } catch (error) {
-    console.error("[patients/[id] PUT]", error);
+  } catch (err) {
+    console.error("[patients/[id] PUT]", err);
     return NextResponse.json({ error: "Failed to update patient" }, { status: 500 });
   }
 }
@@ -74,6 +106,14 @@ export async function DELETE(
   _req: NextRequest,
   ctx: RouteContext<"/api/patients/[id]">
 ) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
+  // Only ADMIN can delete patients
+  if (!canPerform(session!.user.role as string, "delete")) {
+    return forbidden("Only admins can delete patients");
+  }
+
   try {
     const { id } = await ctx.params;
     const patient = await prisma.patient.findUnique({ where: { id } });
@@ -109,9 +149,8 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("[patients/[id] DELETE]", error);
+  } catch (err) {
+    console.error("[patients/[id] DELETE]", err);
     return NextResponse.json({ error: "Failed to delete patient" }, { status: 500 });
   }
 }
-

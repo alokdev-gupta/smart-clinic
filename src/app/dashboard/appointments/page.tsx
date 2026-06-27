@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   CalendarDays, List, ChevronLeft, ChevronRight, CalendarPlus, X
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
@@ -39,6 +40,10 @@ const STATUS_DOT: Record<string, string> = {
 const STATUS_OPTIONS = ["", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"];
 
 export default function AppointmentsPage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
+  const isPatient = session?.user?.role === "PATIENT";
+
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,22 +190,26 @@ export default function AppointmentsPage() {
       label: "Actions",
       render: (_: unknown, row: Appointment) => (
         <div className="flex items-center gap-2">
-          <select
-            disabled={updatingId === row.id}
-            value={row.status}
-            onChange={(e) => handleStatusUpdate(row.id, e.target.value)}
-            className="text-xs rounded-lg border border-slate-200 px-2 py-1.5 bg-white text-slate-700 outline-none cursor-pointer focus:border-emerald-500"
-          >
-            {["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"].map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          <button
-            onClick={() => setDeleteTarget(row)}
-            className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-          >
-            Delete
-          </button>
+          {!isPatient && (
+            <select
+              disabled={updatingId === row.id}
+              value={row.status}
+              onChange={(e) => handleStatusUpdate(row.id, e.target.value)}
+              className="text-xs rounded-lg border border-slate-200 px-2 py-1.5 bg-white text-slate-700 outline-none cursor-pointer focus:border-emerald-500"
+            >
+              {["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"].map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => setDeleteTarget(row)}
+              className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+            >
+              Delete
+            </button>
+          )}
         </div>
       ),
     },
@@ -395,15 +404,17 @@ export default function AppointmentsPage() {
         </div>
       )}
 
-      <ConfirmDialog
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDelete}
-        title="Delete Appointment"
-        description={`Delete this appointment for "${deleteTarget?.patient.user.name}"? This cannot be undone.`}
-        confirmLabel="Delete"
-        isLoading={deleting}
-      />
+      {isAdmin && (
+        <ConfirmDialog
+          open={!!deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDelete}
+          title="Delete Appointment"
+          description={`Delete this appointment for "${deleteTarget?.patient.user.name}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          isLoading={deleting}
+        />
+      )}
     </div>
   );
 }

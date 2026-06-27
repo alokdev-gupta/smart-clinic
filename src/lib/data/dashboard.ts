@@ -1,12 +1,30 @@
 import prisma from "@/lib/prisma";
 import { startOfMonth, endOfMonth, subMonths, format, subDays, startOfDay, endOfDay } from "date-fns";
 
-export async function getDashboardStats() {
+export async function getDashboardStats(userId: string, role: string) {
   const now = new Date();
   const todayStart = startOfDay(now);
   const todayEnd = endOfDay(now);
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
+
+  let patientId: string | null = null;
+  let doctorId: string | null = null;
+
+  if (role === "PATIENT") {
+    const p = await prisma.patient.findFirst({ where: { userId } });
+    patientId = p?.id || null;
+  } else if (role === "DOCTOR") {
+    const d = await prisma.doctor.findFirst({ where: { userId } });
+    doctorId = d?.id || null;
+  }
+
+  const apptWhere: any = {};
+  if (patientId) apptWhere.patientId = patientId;
+  if (doctorId) apptWhere.doctorId = doctorId;
+
+  const invoiceWhere: any = {};
+  if (patientId) invoiceWhere.patientId = patientId;
 
   // Run all queries concurrently
   const [
@@ -18,12 +36,13 @@ export async function getDashboardStats() {
     pendingInvoices,
     recentAppointments,
   ] = await Promise.all([
-    // Total patients
-    prisma.patient.count(),
+    // Total patients: ADMIN/DOCTOR see all count. PATIENT sees 1.
+    role === "PATIENT" ? 1 : prisma.patient.count(),
 
-    // Today's appointments
+    // Today's appointments (filtered by role)
     prisma.appointment.count({
       where: {
+        ...apptWhere,
         date: { gte: todayStart, lte: todayEnd },
       },
     }),
@@ -31,28 +50,29 @@ export async function getDashboardStats() {
     // Available doctors (all doctors count)
     prisma.doctor.count(),
 
-    // Monthly revenue (PAID invoices this month)
-    prisma.invoice.aggregate({
+    // Monthly revenue (PAID invoices this month) - Only ADMIN
+    role === "ADMIN" ? prisma.invoice.aggregate({
       _sum: { total: true },
       where: {
         status: "PAID",
         issuedAt: { gte: monthStart, lte: monthEnd },
       },
-    }),
+    }) : { _sum: { total: 0 } },
 
-    // Bed occupancy
-    prisma.bed.groupBy({
+    // Bed occupancy - Only ADMIN
+    role === "ADMIN" ? prisma.bed.groupBy({
       by: ["isOccupied"],
       _count: { _all: true },
-    }),
+    }) : [],
 
     // Pending invoices
     prisma.invoice.count({
-      where: { status: "PENDING" },
+      where: { ...invoiceWhere, status: "PENDING" },
     }),
 
     // Recent appointments (last 5)
     prisma.appointment.findMany({
+      where: apptWhere,
       take: 5,
       orderBy: { createdAt: "desc" },
       include: {
@@ -69,6 +89,7 @@ export async function getDashboardStats() {
       return prisma.appointment
         .count({
           where: {
+            ...apptWhere,
             date: {
               gte: startOfDay(d),
               lte: endOfDay(d),
@@ -82,8 +103,8 @@ export async function getDashboardStats() {
     })
   );
 
-  // Monthly revenue trend – last 6 months
-  const monthlyRevenueTrend = await Promise.all(
+  // Monthly revenue trend – last 6 months - ADMIN only
+  const monthlyRevenueTrend = role === "ADMIN" ? await Promise.all(
     Array.from({ length: 6 }, (_, i) => {
       const monthDate = subMonths(now, 5 - i);
       const start = startOfMonth(monthDate);
@@ -101,12 +122,15 @@ export async function getDashboardStats() {
           revenue: agg._sum.total ?? 0,
         }));
     })
-  );
+  ) : Array.from({ length: 6 }, (_, i) => ({
+    month: format(subMonths(now, 5 - i), "MMM"),
+    revenue: 0,
+  }));
 
   // Calculate bed occupancy
-  const totalBeds = bedStats.reduce((acc: number, s: any) => acc + s._count._all, 0);
+  const totalBeds = (bedStats as any[]).reduce((acc: number, s: any) => acc + s._count._all, 0);
   const occupiedBeds =
-    bedStats.find((s: any) => s.isOccupied === true)?._count._all ?? 0;
+    (bedStats as any[]).find((s: any) => s.isOccupied === true)?._count._all ?? 0;
   const bedOccupancyPercent =
     totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
 
@@ -124,7 +148,7 @@ export async function getDashboardStats() {
     totalPatients,
     todayAppointments,
     availableDoctors,
-    monthlyRevenue: monthlyRevenuePaid._sum.total ?? 0,
+    monthlyRevenue: (monthlyRevenuePaid as any)._sum.total ?? 0,
     bedOccupancyPercent,
     pendingInvoices,
     weeklyAppointments: weeklyRaw,

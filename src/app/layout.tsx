@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -35,15 +36,17 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-          {children}
-          <Toaster
-            position="top-right"
-            richColors
-            closeButton
-            duration={4000}
-          />
-        </ThemeProvider>
+        <SessionProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+            {children}
+            <Toaster
+              position="top-right"
+              richColors
+              closeButton
+              duration={4000}
+            />
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );

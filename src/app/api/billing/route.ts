@@ -1,9 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireAuth, forbidden } from "@/lib/rbac";
 
 export async function GET() {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
+  const role = session!.user.role as string;
+
   try {
+    const where: Record<string, unknown> = {};
+
+    // PATIENT: only see their own invoices
+    if (role === "PATIENT") {
+      const patient = await prisma.patient.findFirst({ where: { userId: session!.user.id } });
+      if (patient) where.patientId = patient.id;
+      else return NextResponse.json([]);
+    }
+
+    // DOCTOR: not normally needed, but allow read
     const invoices = await prisma.invoice.findMany({
+      where,
       include: {
         patient: { include: { user: { select: { name: true, email: true } } } },
         appointment: {
@@ -13,13 +30,21 @@ export async function GET() {
       orderBy: { issuedAt: "desc" },
     });
     return NextResponse.json(invoices);
-  } catch (error) {
-    console.error("[billing GET]", error);
+  } catch (err) {
+    console.error("[billing GET]", err);
     return NextResponse.json({ error: "Failed to fetch invoices" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
+  // Only ADMIN can create invoices
+  if (session!.user.role !== "ADMIN") {
+    return forbidden("Only admins can create invoices");
+  }
+
   try {
     const body = await req.json();
     const { appointmentId, patientId, amount, tax, paymentMethod } = body;
@@ -51,8 +76,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(invoice, { status: 201 });
-  } catch (error) {
-    console.error("[billing POST]", error);
+  } catch (err) {
+    console.error("[billing POST]", err);
     return NextResponse.json({ error: "Failed to create invoice" }, { status: 500 });
   }
 }

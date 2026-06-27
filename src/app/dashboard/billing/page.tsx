@@ -9,6 +9,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 interface Invoice {
   id: string;
@@ -42,6 +43,9 @@ function formatInvoiceId(id: string) {
 }
 
 export default function BillingPage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
+
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -249,7 +253,7 @@ export default function BillingPage() {
           >
             View
           </Link>
-          {row.status === "PENDING" && (
+          {isAdmin && row.status === "PENDING" && (
             <button
               onClick={() => setPayingTarget(row)}
               className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
@@ -257,12 +261,14 @@ export default function BillingPage() {
               <CheckCircle className="h-3.5 w-3.5" /> Pay
             </button>
           )}
-          <button
-            onClick={() => setDeleteTarget(row)}
-            className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-          >
-            Delete
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setDeleteTarget(row)}
+              className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+            >
+              Delete
+            </button>
+          )}
         </div>
       ),
     },
@@ -276,20 +282,26 @@ export default function BillingPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Billing &amp; Invoices</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Manage patient billing and payments</p>
+          <p className="text-slate-500 text-sm mt-0.5">
+            {isAdmin ? "Manage patient billing and payments" : "View your invoices"}
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex flex-col items-end px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
-            <span className="text-xs font-semibold text-slate-400 uppercase">Total Revenue</span>
-            <span className="text-lg font-bold text-emerald-600">{formatCurrency(totalRevenue)}</span>
-          </div>
-          <button
-            className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-all"
-            style={{ background: "linear-gradient(135deg, #10B981, #059669)" }}
-            onClick={openCreateModal}
-          >
-            <Plus className="h-4 w-4" /> Create Invoice
-          </button>
+          {isAdmin && (
+            <div className="flex flex-col items-end px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
+              <span className="text-xs font-semibold text-slate-400 uppercase">Total Revenue</span>
+              <span className="text-lg font-bold text-emerald-600">{formatCurrency(totalRevenue)}</span>
+            </div>
+          )}
+          {isAdmin && (
+            <button
+              className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-all"
+              style={{ background: "linear-gradient(135deg, #10B981, #059669)" }}
+              onClick={openCreateModal}
+            >
+              <Plus className="h-4 w-4" /> Create Invoice
+            </button>
+          )}
         </div>
       </div>
 

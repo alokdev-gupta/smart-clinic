@@ -20,9 +20,10 @@ interface DashboardStats {
 
 interface StatsCardsProps {
   stats: DashboardStats;
+  role: string;
 }
 
-export default function StatsCards({ stats }: StatsCardsProps) {
+export default function StatsCards({ stats, role }: StatsCardsProps) {
   const cards = [
     {
       title: "Total Patients",
@@ -47,24 +48,29 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       value: formatCurrency(stats.monthlyRevenue),
       icon: DollarSign,
       color: "green" as const,
+      roles: ["ADMIN"],
     },
     {
       title: "Bed Occupancy",
       value: `${stats.bedOccupancyPercent}%`,
       icon: Building2,
       color: "orange" as const,
+      roles: ["ADMIN"],
     },
     {
       title: "Pending Invoices",
       value: stats.pendingInvoices.toLocaleString(),
       icon: Receipt,
       color: "red" as const,
+      roles: ["ADMIN", "PATIENT"], // PATIENT can see their own pending invoices
     },
   ];
 
+  const visibleCards = cards.filter(card => !card.roles || card.roles.includes(role));
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-      {cards.map((card) => (
+    <div className={`grid grid-cols-2 md:grid-cols-3 xl:grid-cols-${Math.min(visibleCards.length, 6)} gap-4`}>
+      {visibleCards.map((card) => (
         <StatCard
           key={card.title}
           title={card.title}

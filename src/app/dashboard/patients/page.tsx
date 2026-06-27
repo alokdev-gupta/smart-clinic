@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { UserPlus, Users } from "lucide-react";
+import { useSession } from "next-auth/react";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
@@ -30,6 +31,9 @@ const BLOOD_GROUP_COLORS: Record<string, string> = {
 };
 
 export default function PatientsPage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
+
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Patient | null>(null);
@@ -131,13 +135,16 @@ export default function PatientsPage() {
           >
             View
           </Link>
-          <button
-            onClick={() => setDeleteTarget(row)}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-600
-              hover:bg-red-100 transition-colors"
-          >
-            Delete
-          </button>
+          {/* Delete button — ADMIN only */}
+          {isAdmin && (
+            <button
+              onClick={() => setDeleteTarget(row)}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-600
+                hover:bg-red-100 transition-colors"
+            >
+              Delete
+            </button>
+          )}
         </div>
       ),
     },
@@ -158,7 +165,7 @@ export default function PatientsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Patients</h1>
           <p className="text-slate-500 text-sm mt-0.5">
-            Manage and view all registered patients
+            {isAdmin ? "Manage and view all registered patients" : "View patient records"}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -166,15 +173,18 @@ export default function PatientsPage() {
             <Users className="h-4 w-4 text-emerald-600" />
             <span className="text-sm font-semibold text-emerald-700">{patients.length} Total</span>
           </div>
-          <Link
-            href="/dashboard/patients/new"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white
-              transition-all hover:opacity-90 hover:shadow-md"
-            style={{ background: "linear-gradient(135deg, #10B981, #059669)" }}
-          >
-            <UserPlus className="h-4 w-4" />
-            Register Patient
-          </Link>
+          {/* Register button — ADMIN only */}
+          {isAdmin && (
+            <Link
+              href="/dashboard/patients/new"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white
+                transition-all hover:opacity-90 hover:shadow-md"
+              style={{ background: "linear-gradient(135deg, #10B981, #059669)" }}
+            >
+              <UserPlus className="h-4 w-4" />
+              Register Patient
+            </Link>
+          )}
         </div>
       </div>
 
@@ -189,15 +199,17 @@ export default function PatientsPage() {
         />
       </div>
 
-      <ConfirmDialog
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDelete}
-        title="Delete Patient"
-        description={`Are you sure you want to delete "${deleteTarget?.user.name}"? This will also delete their user account and cannot be undone.`}
-        confirmLabel="Delete Patient"
-        isLoading={deleting}
-      />
+      {isAdmin && (
+        <ConfirmDialog
+          open={!!deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDelete}
+          title="Delete Patient"
+          description={`Are you sure you want to delete "${deleteTarget?.user.name}"? This will also delete their user account and cannot be undone.`}
+          confirmLabel="Delete Patient"
+          isLoading={deleting}
+        />
+      )}
     </div>
   );
 }

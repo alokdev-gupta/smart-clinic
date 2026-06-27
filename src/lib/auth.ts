@@ -33,8 +33,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // Only ADMIN role is allowed to login
-        if (user.role !== "ADMIN") {
+        // Allow ADMIN, DOCTOR, and PATIENT roles to login
+        const allowedRoles = ["ADMIN", "DOCTOR", "PATIENT"];
+        if (!allowedRoles.includes(user.role)) {
           return null;
         }
 

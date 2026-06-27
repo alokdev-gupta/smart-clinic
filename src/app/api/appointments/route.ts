@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { startOfDay, endOfDay } from "date-fns";
+import { requireAuth } from "@/lib/rbac";
 
 export async function GET(req: NextRequest) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
   try {
     const { searchParams } = new URL(req.url);
     const doctorId = searchParams.get("doctorId");
     const status = searchParams.get("status");
     const date = searchParams.get("date");
+    const role = session!.user.role as string;
 
     const where: Record<string, unknown> = {};
     if (doctorId) where.doctorId = doctorId;
@@ -15,6 +20,20 @@ export async function GET(req: NextRequest) {
     if (date) {
       const d = new Date(date);
       where.date = { gte: startOfDay(d), lte: endOfDay(d) };
+    }
+
+    // DOCTOR: only see their own appointments
+    if (role === "DOCTOR") {
+      const doctor = await prisma.doctor.findFirst({ where: { userId: session!.user.id } });
+      if (doctor) where.doctorId = doctor.id;
+      else return NextResponse.json([]);
+    }
+
+    // PATIENT: only see their own appointments
+    if (role === "PATIENT") {
+      const patient = await prisma.patient.findFirst({ where: { userId: session!.user.id } });
+      if (patient) where.patientId = patient.id;
+      else return NextResponse.json([]);
     }
 
     const appointments = await prisma.appointment.findMany({
@@ -26,13 +45,17 @@ export async function GET(req: NextRequest) {
       orderBy: [{ date: "desc" }, { time: "asc" }],
     });
     return NextResponse.json(appointments);
-  } catch (error) {
-    console.error("[appointments GET]", error);
+  } catch (err) {
+    console.error("[appointments GET]", err);
     return NextResponse.json({ error: "Failed to fetch appointments" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
+  // All authenticated roles can create appointments
   try {
     const body = await req.json();
     const { patientId, doctorId, date, time, reason } = body;
@@ -76,8 +99,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(appointment, { status: 201 });
-  } catch (error) {
-    console.error("[appointments POST]", error);
+  } catch (err) {
+    console.error("[appointments POST]", err);
     return NextResponse.json({ error: "Failed to create appointment" }, { status: 500 });
   }
 }
